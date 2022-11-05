@@ -139,7 +139,7 @@ def DumpBuffer():
     # Case insensitive sort of lists
     for key, val in FoundBuffer['Data'].items():
         if isinstance(val, list):
-            var = sorted(val, key=str.casefold)
+            FoundBuffer['Data'][key] = sorted(val, key=lambda v: (v.upper(), v))
     # Dump buffer to file
     with open(ScriptParameters['OutputFile'], 'a', encoding="UTF-8", errors="ignore") as output: 
         for key, val in FoundBuffer['Data'].items(): 
