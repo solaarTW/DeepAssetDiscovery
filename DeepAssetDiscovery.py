@@ -44,6 +44,7 @@ def RunMode(mode):
         data = open(RawFile, 'r', encoding="UTF-8", errors="ignore")
         data = convertJSON(data)
         if isinstance(data, dict):
+            ScriptParameters['InputFile'] = RawFile.name
             data['EndOfFile'] = 'EndOfFile'
             RecursiveSearch(Primary=data, Secondary=None)
         else:
@@ -107,21 +108,22 @@ def RecursiveSearch(Primary, Secondary=None):
     # Unexpected error -- print for prosterity
     else:
         if len(Primary) + len(Secondary) < 100:
-            print(f"An Unexpected error occurred at {Secondary}:::{Primary}\n")
+            print(f"An Unexpected error occurred at {ScriptParameters['InputFile']}:::{Secondary}:::{Primary}\n")
 
 
-def BufferData(Secondary, Primary):    
+def BufferData(Secondary, Primary):   
+    key = f"{ScriptParameters['InputFile']}:::{Secondary}"
     # Check for a duplicate key
-    if Secondary not in FoundBuffer['Data']:
-        FoundBuffer['Data'][Secondary] = Primary
+    if key not in FoundBuffer['Data']:
+        FoundBuffer['Data'][key] = Primary
     # Duplicate key found, check if it already has the Primary
-    elif isinstance(FoundBuffer['Data'][Secondary], list) and Primary not in FoundBuffer['Data'][Secondary]:
-        FoundBuffer['Data'][Secondary].append(Primary)
+    elif isinstance(FoundBuffer['Data'][key], list) and Primary not in FoundBuffer['Data'][key]:
+        FoundBuffer['Data'][key].append(Primary)
     # Cast string value to list[] value
-    elif isinstance(FoundBuffer['Data'][Secondary], str):
-        tmp = FoundBuffer['Data'][Secondary]
-        FoundBuffer['Data'][Secondary] = [tmp]
-        FoundBuffer['Data'][Secondary].append(Primary)
+    elif isinstance(FoundBuffer['Data'][key], str):
+        tmp = FoundBuffer['Data'][key]
+        FoundBuffer['Data'][key] = [tmp]
+        FoundBuffer['Data'][key].append(Primary)
     #Duplicate in key and value
     else:
         None # housekeeping
@@ -215,6 +217,7 @@ x = 0
 # SortMode == Chronological ::: Leave values as they were found in the files
 # SortMode == Alphabetic ::: Sort FoundBuffer['Data'] and then each individual list aphabetically
 ScriptParameters = {
+    'InputFile': '',
     'OutputFile': 'out_DAD.txt',
     'SearchMode': 'Include',
     'SearchModes': {
