@@ -112,7 +112,7 @@ def RecursiveSearch(Primary, Secondary=None):
 
 
 def BufferData(Secondary, Primary):   
-    key = f"{ScriptParameters['InputFile']}:::{Secondary}"
+    key = (ScriptParameters['InputFile'],Secondary)
     # Check for a duplicate key
     if key not in FoundBuffer['Data']:
         FoundBuffer['Data'][key] = Primary
@@ -122,6 +122,7 @@ def BufferData(Secondary, Primary):
     # Cast string value to list[] value
     elif isinstance(FoundBuffer['Data'][key], str):
         tmp = FoundBuffer['Data'][key]
+        FoundBuffer['Data'][key] = ''
         FoundBuffer['Data'][key] = [tmp]
         FoundBuffer['Data'][key].append(Primary)
     #Duplicate in key and value
@@ -133,7 +134,7 @@ def DumpBuffer():
     # Check sort mode for alpha, be default it remains chronological
     if ScriptParameters['SortMode'].get() == 'Alphabetic':
         # Case insensitive sort of dictionary
-        FoundBuffer['Data'] = dict(sorted(FoundBuffer['Data'].items(), key=lambda i: i[0].lower()))
+        FoundBuffer['Data'] = dict(sorted(FoundBuffer['Data'].items(), key=lambda i: i[0][0].lower()))
         # Case insensitive sort of lists
         for key, val in FoundBuffer['Data'].items():
             if isinstance(val, list):
@@ -169,7 +170,7 @@ def CreateTkWindow():
     # Calculate resolution of screen for dynamic resizing
     font = tkfont.Font(family="Consolas", size=10, weight="normal")
     width = 0
-    height = 5
+    height = 1
     # Identify the quantity of characters to fill the largest width and height
     for key, val in ScriptParameters['SearchModes'].items():
         if len(key+val) > width:
@@ -177,7 +178,7 @@ def CreateTkWindow():
         height += 1
     # Uneducated calculations for the dynamic resizing
     width = width * font.measure("m")
-    height = height * font.measure("m") * len(ScriptParameters['SearchModes'])
+    height = round(100/(height*2)) * font.measure("m") * len(ScriptParameters['SearchModes'])
     # Hopes and prayers
     tkwindow.geometry(f"{width}x{height}")
 
@@ -221,11 +222,11 @@ ScriptParameters = {
     'OutputFile': 'out_DAD.txt',
     'SearchMode': 'Include',
     'SearchModes': {
-        "Include": "Only find keys that are in the Include list",
-        "Discovery": "Find all keys except ones in the Include list",
-        "Exclude": "Find all keys except ones in the Exclude list",
-        "Neither": "Find all keys except ones in the Include and Exclude list",
-        "NoFilter": "Do not filter, Find all unique key-value pairs"
+        "Include": "Only find linking properties",
+        "Discovery": "Find all keys except ones in the Include list"
+        # "Exclude": "Find all keys except ones in the Exclude list",
+        # "Neither": "Find all keys except ones in the Include and Exclude list",
+        # "NoFilter": "Do not filter, Find all unique key-value pairs"
         },
     'SortMode': 'Chronological',
     'Include': [
