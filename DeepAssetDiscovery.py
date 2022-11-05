@@ -5,10 +5,11 @@ from tkinter.ttk import *
 from tkinter.filedialog import askdirectory
 # Measure screen width to resolve tkwindow
 import tkinter.font as tkfont
-# File handling
+# File handling and cancel buttons
 import os
-# Break on the cancel button
 import sys
+import platform
+import subprocess
 # Read JSON parse files
 import json
 # Recursion library
@@ -26,16 +27,16 @@ def RunMode(mode):
     tkwindow.minsize()
     
     # Folder dialog prompt
-    ProjectDirectory = askdirectory(title='Select Folder', initialdir='.') # shows dialog box and return the path
+    ScriptParameters['ProjectDirectory'] = askdirectory(title='Select Folder', initialdir='.') # shows dialog box and return the path
     # Assign path to the output file
-    ScriptParameters['OutputFile'] = f"{ProjectDirectory}/{ScriptParameters['OutputFile']}"
+    ScriptParameters['OutputFile'] = f"{ScriptParameters['ProjectDirectory']}/{ScriptParameters['OutputFile']}"
 
     # Delete file from previous runtime
     if (os.path.isfile(ScriptParameters['OutputFile'])):
         os.remove(ScriptParameters['OutputFile'])
     
     # Identify JSON files in the folder structure
-    RawFiles = list(Path(ProjectDirectory).rglob("*.json"))
+    RawFiles = list(Path(ScriptParameters['ProjectDirectory']).rglob("*.json"))
     
     # Start recursion
     FoundBuffer['NumberOfFiles'] = len(RawFiles) - 1
@@ -112,7 +113,7 @@ def RecursiveSearch(Primary, Secondary=None):
 
 
 def BufferData(Secondary, Primary):   
-    key = (ScriptParameters['InputFile'],Secondary)
+    key = (ScriptParameters['InputFile'], Secondary)
     # Check for a duplicate key
     if key not in FoundBuffer['Data']:
         FoundBuffer['Data'][key] = Primary
@@ -132,13 +133,13 @@ def BufferData(Secondary, Primary):
 
 def DumpBuffer():
     # Check sort mode for alpha, be default it remains chronological
-    if ScriptParameters['SortMode'].get() == 'Alphabetic':
-        # Case insensitive sort of dictionary
-        FoundBuffer['Data'] = dict(sorted(FoundBuffer['Data'].items(), key=lambda i: i[0][0].lower()))
-        # Case insensitive sort of lists
-        for key, val in FoundBuffer['Data'].items():
-            if isinstance(val, list):
-                var = sorted(val, key=str.casefold)
+    # if ScriptParameters['SortMode'].get() == 'Alphabetic':
+    # Case insensitive sort of dictionary
+    FoundBuffer['Data'] = dict(sorted(FoundBuffer['Data'].items(), key=lambda i: i[0][0].lower()))
+    # Case insensitive sort of lists
+    for key, val in FoundBuffer['Data'].items():
+        if isinstance(val, list):
+            var = sorted(val, key=str.casefold)
     # Dump buffer to file
     with open(ScriptParameters['OutputFile'], 'a', encoding="UTF-8", errors="ignore") as output: 
         for key, val in FoundBuffer['Data'].items(): 
@@ -163,6 +164,7 @@ def convertJSON(tup):
 def onClick():
     RunMode(ScriptParameters['SearchMode'].get())
     DumpBuffer()
+    open_file(ScriptParameters['ProjectDirectory'])
     tkwindow.destroy()
 
 
@@ -185,7 +187,7 @@ def CreateTkWindow():
 
     # Tkinter string variable that will anchor the radiobutton selections
     ScriptParameters['SearchMode'] = StringVar(tkwindow, "Include")
-    ScriptParameters['SortMode'] = StringVar(tkwindow, "Chronological")
+    # ScriptParameters['SortMode'] = StringVar(tkwindow, "Chronological")
     header = StringVar()
     # Create radiobuttons for all the search modes
     label = Label( tkwindow, textvariable=header, font= ('Helvetica 15 underline')).pack(anchor=W)
@@ -193,12 +195,23 @@ def CreateTkWindow():
     for (searchmode, description) in ScriptParameters['SearchModes'].items():
         Radiobutton(tkwindow, text = description, variable = ScriptParameters['SearchMode'],
             value = searchmode).pack(side = TOP, anchor=W, ipady = 5)
-    Checkbutton(tkwindow, text='Sort output alphabetically', variable=ScriptParameters['SortMode'], onvalue='Alphabetic', offvalue='Chronological').pack()
-    Button(tkwindow, text= "Set wkit project's raw folder", command=onClick).pack(pady= 20)
+    # Checkbutton(tkwindow, text='Sort output alphabetically', variable=ScriptParameters['SortMode'], onvalue='Alphabetic', offvalue='Chronological').pack()
+    Button(tkwindow, text= "Set wkit project's raw folder", command=onClick).pack(pady= 10, anchor=W)
 
 
     # Infinite loop terminated in the onClick definition
     tkwindow.mainloop()
+    
+
+# Open file explorer at the dump file
+def open_file(path):
+    if platform.system() == "Windows":
+        os.startfile(path)
+    elif platform.system() == "Darwin":
+        subprocess.Popen(["open", path])
+    else:
+        subprocess.Popen(["xdg-open", path])
+
 
 
 # Declare buffer queue of found keys during the recursive definition
@@ -218,12 +231,13 @@ x = 0
 # SortMode == Chronological ::: Leave values as they were found in the files
 # SortMode == Alphabetic ::: Sort FoundBuffer['Data'] and then each individual list aphabetically
 ScriptParameters = {
+    'ProjectDirectory': '',
     'InputFile': '',
     'OutputFile': 'out_DAD.txt',
     'SearchMode': 'Include',
     'SearchModes': {
         "Include": "Only find linking properties",
-        "Discovery": "Find all keys except ones in the Include list"
+        "Discovery": "Discovery mode that ignores known linking properties"
         # "Exclude": "Find all keys except ones in the Exclude list",
         # "Neither": "Find all keys except ones in the Include and Exclude list",
         # "NoFilter": "Do not filter, Find all unique key-value pairs"
