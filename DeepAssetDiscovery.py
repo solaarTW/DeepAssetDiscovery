@@ -24,7 +24,7 @@ from operator import itemgetter
 # Output: None (except the dummy light I guess)
 def RunMode(mode):
     tkwindow.minsize()
-
+    
     # Folder dialog prompt
     ProjectDirectory = askdirectory(title='Select Folder', initialdir='.') # shows dialog box and return the path
     # Assign path to the output file
@@ -33,10 +33,10 @@ def RunMode(mode):
     # Delete file from previous runtime
     if (os.path.isfile(ScriptParameters['OutputFile'])):
         os.remove(ScriptParameters['OutputFile'])
-
+    
     # Identify JSON files in the folder structure
     RawFiles = list(Path(ProjectDirectory).rglob("*.json"))
-
+    
     # Start recursion
     FoundBuffer['NumberOfFiles'] = len(RawFiles) - 1
     for FoundBuffer['cntIndex'], RawFile in enumerate(RawFiles):
@@ -226,25 +226,11 @@ ScriptParameters = {
         },
     'SortMode': 'Chronological',
     'Include': [
-        'actorname','alarmsound','appearancename','appearancenames','archivefilename','area','areareference','audioevent','audiometadataname','audioname','audioresourcename','audiotag',
-        'basemeshappearance','basetypesfile',
-        'categoriesfile','censored','character','childanimname','chunkmaterials','combatvosettingsname','componentname','componentnames','contextactorname','cover',
-        'defaultappearance','defaultemptyimageatlas','depotpath','devicename','displaynameoverride','distractionsound','distractionsoundname','dynamicentityuniquename',
-        'effectstoplay','elementstohideontcs','entity','entriesactivatedatstart','entryname','eventname',
-        'facematerials','femalevariant','filename','filenameparsingrules',
-        'glitchingstart','glitchingstop','glitchsfx','greenlightsfx','group1name','group2name','groupname','grouppath',
-        'jsonfilesdirectory',
-        'locationprefabref',
-        'malevariant','managername','material','meshappearance''meshes','message','metaquestid',
-        'name','namereference','noderefs',
-        'original',
-        'parentappearance','partscategoriesfile','partsfile','pathdeformed','pathrest','playervehiclename',
-        'questprefabnoderef',
-        'redlightsfx',
-        'scandirectory','sceneactorcontextname','scenename','scenepath','scenepaths','sfxname','soundevent','soundeventname','soundname','speakername','splinenode','splinenoderef','splineref','spotref',
-        'targetoverridenoderef','texturepart',
-        'vendorid',
-        'voicesetname','voicetagname'
+        'appearancename','appearanceresource',
+        'componentname',
+        'defaultAppearance','depotpath',
+        'meshappearance',
+        'name'
     ],
     'Exclude': [
         '$type',
