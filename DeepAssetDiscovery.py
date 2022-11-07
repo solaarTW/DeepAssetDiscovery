@@ -45,9 +45,10 @@ def RunMode(mode):
         data = open(RawFile, 'r', encoding="UTF-8", errors="ignore")
         data = convertJSON(data)
         if isinstance(data, dict):
+            FoundBuffer['Data'][RawFile.name] = dict()
             ScriptParameters['InputFile'] = RawFile.name
             data['EndOfFile'] = 'EndOfFile'
-            RecursiveSearch(Primary=data, Secondary=None)
+            RecursiveSearch(val=data, key=None)
         else:
             print(f"Could not convert {RawFile.name}")
     # Dummy light
@@ -62,88 +63,87 @@ def RunMode(mode):
 # Step 1: Identify type(primary)
 # Step 2: Recurse if possible or otherwise evaluate for FoundBuffer[]
 # Step 3: Log primary value or dump FoundBuffer[] to file
-def RecursiveSearch(Primary, Secondary=None):
+def RecursiveSearch(val, key=None):
     # Dictory found -- dive into ScriptParameters
-    if isinstance(Primary, dict):
-        for key, val in Primary.items():
-            RecursiveSearch(val, key)
+    if isinstance(val, dict):
+        for k, v in val.items():
+            RecursiveSearch(v, k)
     # List found -- dive into list
-    elif isinstance(Primary, list):
-        for val in Primary:
-            RecursiveSearch(val, Secondary)
+    elif isinstance(val, list):
+        for v in val:
+            RecursiveSearch(v, key)
     # String found -- validate and then record if valid
-    elif isinstance(Primary, str):
+    elif isinstance(val, str):
         # Ignore hashes
-        if (len(Primary) + len(Secondary) < 200):
+        if (len(key) + len(val) < 200):
             # Include search mode
             if ScriptParameters['SearchMode'].get() == 'Include':
                 # Filter for keys in the Include list
-                if Secondary.lower() in ScriptParameters['Include']:
-                    BufferData(Secondary, Primary)
+                if key.lower() in ScriptParameters['Include']:
+                    BufferData(key, val)
             # Exclude search mode
             elif ScriptParameters['SearchMode'].get() == 'Exclude':
                 # Filter out keys in the Exclude list
-                if Secondary.lower() not in ScriptParameters['Exclude']:
-                    BufferData(Secondary, Primary)
+                if key.lower() not in ScriptParameters['Exclude']:
+                    BufferData(key, val)
             # Neither search mode
             elif ScriptParameters['SearchMode'].get() == 'Neither':
                 # Filter out keys in Include and Exclude lists
-                if Secondary.lower() not in [*ScriptParameters['Include'],*ScriptParameters['Exclude']]:
-                    BufferData(Secondary, Primary)
+                if key.lower() not in [*ScriptParameters['Include'],*ScriptParameters['Exclude']]:
+                    BufferData(key, val)
             # Discovery search mode
             elif ScriptParameters['SearchMode'].get() == 'Discovery':
                 # Filter out keys in the Include list
-                if Secondary.lower() not in ScriptParameters['Include']:
-                    BufferData(Secondary, Primary)
+                if val.lower() not in ScriptParameters['Include']:
+                    BufferData(key, val)
             # Oohhhhh yeeaaaaahhhhhhhhhhh
             elif ScriptParameters['SearchMode'].get() == 'NoFilter':
-                BufferData(Secondary, Primary)
+                BufferData(key, val)
             # Unexpected error
             else:
-                print(f"An Unexpected error occurred at {Secondary}:::{Primary}\n")
+                print(f"An Unexpected error occurred file {ScriptParameters['InputFile']} at {key}:::{val}\n")
         else:
             None # housekeeping
     # Integer, float, or null found -- ignore
-    elif isinstance(Primary, (int, float)) or Primary==None:
+    elif isinstance(val, (int, float)) or val==None:
         None # I dunno, future development?
     # Unexpected error -- print for prosterity
     else:
-        if len(Primary) + len(Secondary) < 100:
+        if len(val) + len(key) < 100:
             print(f"An Unexpected error occurred at {ScriptParameters['InputFile']}:::{Secondary}:::{Primary}\n")
 
 
-def BufferData(Secondary, Primary):   
-    key = (ScriptParameters['InputFile'], Secondary)
-    # Check for a duplicate key
-    if key not in FoundBuffer['Data']:
-        FoundBuffer['Data'][key] = Primary
-    # Duplicate key found, check if it already has the Primary
-    elif isinstance(FoundBuffer['Data'][key], list) and Primary not in FoundBuffer['Data'][key]:
-        FoundBuffer['Data'][key].append(Primary)
-    # Cast string value to list[] value
-    elif isinstance(FoundBuffer['Data'][key], str):
-        tmp = FoundBuffer['Data'][key]
-        FoundBuffer['Data'][key] = ''
-        FoundBuffer['Data'][key] = [tmp]
-        FoundBuffer['Data'][key].append(Primary)
-    #Duplicate in key and value
+def BufferData(key, val):   
+    file = ScriptParameters['InputFile']
+    # If the key is not already buffered then add it
+    if key not in FoundBuffer['Data'][file]:
+        FoundBuffer['Data'][file][key] = val
+    # If the value is not buffered yet and that index is a list then append the new value
+    elif val not in FoundBuffer['Data'][file][key] and isinstance(FoundBuffer['Data'][file][key], list):
+        FoundBuffer['Data'][file][key].append(val)
+    # if the index is a string then change it to a list before appending it
+    elif isinstance(FoundBuffer['Data'][file][key], str):
+        tmp = FoundBuffer['Data'][file][key]
+        FoundBuffer['Data'][file][key] = [tmp]
+        FoundBuffer['Data'][file][key].append(val)
+    # The value is already buffered and can be ignored
     else:
         None # housekeeping
 
 
+# Recursive sort definition for dictionary values
+def sort_dict(item: dict):
+    # Recursively drill into JSON while it remains a dictionary, then stop when it isn't and sort key-value pairs on the drill up
+    return {k: sort_dict(v) if isinstance(v, dict) else v for k, v in sorted(item.items())}
+
+
+# Dump discovery buffer to file in JSON format
 def DumpBuffer():
-    # Check sort mode for alpha, be default it remains chronological
-    # if ScriptParameters['SortMode'].get() == 'Alphabetic':
-    # Case insensitive sort of dictionary
-    FoundBuffer['Data'] = dict(sorted(FoundBuffer['Data'].items(), key=lambda i: i[0][0].lower()))
-    # Case insensitive sort of lists
-    for key, val in FoundBuffer['Data'].items():
-        if isinstance(val, list):
-            FoundBuffer['Data'][key] = sorted(val, key=lambda v: (v.upper(), v))
+    file = ScriptParameters['InputFile']
+    FoundBuffer['Data'] = dict(sort_dict(FoundBuffer['Data']))
     # Dump buffer to file
-    with open(ScriptParameters['OutputFile'], 'a', encoding="UTF-8", errors="ignore") as output: 
-        for key, val in FoundBuffer['Data'].items(): 
-            output.write('%s:%s\n' % (key, val))
+    with open(ScriptParameters['OutputFile'], 'w', encoding='UTF-8') as output:
+        json.dump(FoundBuffer['Data'], output, ensure_ascii=False, indent=4)
     output.close()
     FoundBuffer['Data'] = dict() # Reset buffer
 
@@ -220,7 +220,6 @@ FoundBuffer = {
     'NumberOfFiles': 0,
     'Data': dict()
 }
-x = 0
 
 # Array of keywords to filter the recursion on
 # SearchMode == Include ::: Find keys that are in this list
