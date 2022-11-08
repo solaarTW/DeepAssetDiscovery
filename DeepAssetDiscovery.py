@@ -195,7 +195,10 @@ def BufferData(key, val):
 
 # Recursive sort definition for dictionary values
 def sort_dict(item: dict):
-    # Recursively drill into JSON while it remains a dictionary, then stop when it isn't and sort key-value pairs on the drill up
+    # If the current recursion is a list then sort it alphabetically
+    for k, v in sorted(item.items()):
+        item[k] = sorted(v) if isinstance(v, list) else v
+    # Recursively drill into JSON while it remains a dictionary.
     return {k: sort_dict(v) if isinstance(v, dict) else v for k, v in sorted(item.items())}
 
 
