@@ -30,6 +30,8 @@ def CreateTkWindow():
     for key, val in ScriptParameters['SearchModes'].items():
         if len(key+val) > width:
             width = len(key+val)
+        else:
+            None # housekeeping
         height += 1
     # Uneducated calculations for the dynamic resizing
     width = width * font.measure("m")
@@ -96,10 +98,11 @@ def RunMode(mode):
     # Delete file from previous runtime
     if (os.path.isfile(ScriptParameters['OutputFile'])):
         os.remove(ScriptParameters['OutputFile'])
+    else:
+        None # housekeeping
     
     # Identify JSON files in the folder structure
     RawFiles = list(Path(ScriptParameters['ProjectDirectory']).rglob("*.json"))
-    
     # Start recursion
     FoundBuffer['NumberOfFiles'] = len(RawFiles) - 1
     for FoundBuffer['cntIndex'], RawFile in enumerate(RawFiles):
@@ -143,21 +146,29 @@ def RecursiveSearch(val, key=None):
                 # Filter for keys in the Include list
                 if key.lower() in ScriptParameters['Include']:
                     BufferData(key, val)
+                else:
+                    None # housekeeping
             # Exclude search mode
             elif ScriptParameters['SearchMode'].get() == 'Exclude':
                 # Filter out keys in the Exclude list
                 if key.lower() not in ScriptParameters['Exclude']:
                     BufferData(key, val)
+                else:
+                    None # housekeeping
             # Neither search mode
             elif ScriptParameters['SearchMode'].get() == 'Neither':
                 # Filter out keys in Include and Exclude lists
                 if key.lower() not in [*ScriptParameters['Include'],*ScriptParameters['Exclude']]:
                     BufferData(key, val)
+                else:
+                    None # housekeeping
             # Discovery search mode
             elif ScriptParameters['SearchMode'].get() == 'Discovery':
                 # Filter out keys in the Include list
                 if val.lower() not in ScriptParameters['Include']:
                     BufferData(key, val)
+                else:
+                    None # housekeeping
             # Oohhhhh yeeaaaaahhhhhhhhhhh
             elif ScriptParameters['SearchMode'].get() == 'NoFilter':
                 BufferData(key, val)
@@ -173,10 +184,18 @@ def RecursiveSearch(val, key=None):
     else:
         if len(val) + len(key) < 100:
             print(f"An Unexpected error occurred at {ScriptParameters['InputFile']}:::{Secondary}:::{Primary}\n")
+        else:
+            None # housekeeping
 
 
 def BufferData(key, val):   
+    # Shorthand the variable for easier reading below
     file = ScriptParameters['InputFile']
+    # Compile a list of linked files
+    if key == 'DepotPath' and val not in FoundBuffer['MissingFiles']:
+        FoundBuffer['MissingFiles'].append(val)
+    else:
+        None # housekeeping
     # If the key is not already buffered then add it
     if key not in FoundBuffer['Data'][file]:
         FoundBuffer['Data'][file][key] = val
@@ -193,6 +212,20 @@ def BufferData(key, val):
         None # housekeeping
 
 
+# Remove files from the missing list that are in the project's archive folder
+def RemoveArchiveFiles():
+    # Replace ./raw with ./archive
+    ArchiveLocation = (f"{str(ScriptParameters['ProjectDirectory'])[:-3]}archive")
+    # Get all the archive files
+    ArchiveFiles = str(list(Path(ArchiveLocation).rglob("*.*")))
+    for ArchiveFile in ArchiveFiles:
+        # Substring file's path to get /base...
+        ArchiveFile = ArchiveFile[ArchiveFile.find("base"):-5]
+        if ArchiveFile in FoundBuffer['MissingFiles']:
+            # Remove alreaady added file from the missing list
+            FoundBuffer['MissingFiles'].remove(ArchiveFile)
+
+
 # Recursive sort definition for dictionary values
 def sort_dict(item: dict):
     # If the current recursion is a list then sort it alphabetically
@@ -204,8 +237,14 @@ def sort_dict(item: dict):
 
 # Dump discovery buffer to file in JSON format
 def DumpBuffer():
-    file = ScriptParameters['InputFile']
+    # Identify and sort files missing from the project
+    RemoveArchiveFiles()
+    # Sort buffer and convert to dict for json.dump
     FoundBuffer['Data'] = dict(sort_dict(FoundBuffer['Data']))
+    # Sort the missing files
+    FoundBuffer['MissingFiles'] = sorted(FoundBuffer['MissingFiles'])
+    # Move the missing files into the export section of the buffer
+    FoundBuffer['Data']['Missing_Files'] = FoundBuffer['MissingFiles']
     # Dump buffer to file
     with open(ScriptParameters['OutputFile'], 'w', encoding='UTF-8') as output:
         json.dump(FoundBuffer['Data'], output, ensure_ascii=False, indent=4)
@@ -217,7 +256,8 @@ def DumpBuffer():
 FoundBuffer = {
     'cntIndex': 0,
     'NumberOfFiles': 0,
-    'Data': dict()
+    'Data': dict(),
+    'MissingFiles':[]
 }
 
 
@@ -232,7 +272,7 @@ FoundBuffer = {
 ScriptParameters = {
     'ProjectDirectory': '',
     'InputFile': '',
-    'OutputFile': 'out_DAD.txt',
+    'OutputFile': 'out_DAD.json',
     'SearchMode': 'Include',
     'SearchModes': {
         "Include": "Only find linking properties",
