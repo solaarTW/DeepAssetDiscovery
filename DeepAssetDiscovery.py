@@ -20,12 +20,74 @@ from collections import defaultdict
 from operator import itemgetter
 
 
+# Create UI for runtime settings and then pass control off to the code
+def CreateTkWindow():
+    # Calculate resolution of screen for dynamic resizing
+    font = tkfont.Font(family="Consolas", size=10, weight="normal")
+    width = 0
+    height = 1
+    # Identify the quantity of characters to fill the largest width and height
+    for key, val in ScriptParameters['SearchModes'].items():
+        if len(key+val) > width:
+            width = len(key+val)
+        height += 1
+    # Uneducated calculations for the dynamic resizing
+    width = width * font.measure("m")
+    height = round(100/(height*2)) * font.measure("m") * len(ScriptParameters['SearchModes'])
+    # Hopes and prayers
+    tkwindow.geometry(f"{width}x{height}")
+    # Tkinter string variable that will anchor the radiobutton selections
+    ScriptParameters['SearchMode'] = StringVar(tkwindow, "Include")
+    # ScriptParameters['SortMode'] = StringVar(tkwindow, "Chronological")
+    header = StringVar()
+    # Create radiobuttons for all the search modes
+    label = Label( tkwindow, textvariable=header, font= ('Helvetica 15 underline')).pack(anchor=W)
+    header.set("Choose what keys to filter for:")
+    for (searchmode, description) in ScriptParameters['SearchModes'].items():
+        Radiobutton(tkwindow, text = description, variable = ScriptParameters['SearchMode'],
+            value = searchmode).pack(side = TOP, anchor=W, ipady = 5)
+    # Checkbutton(tkwindow, text='Sort output alphabetically', variable=ScriptParameters['SortMode'], onvalue='Alphabetic', offvalue='Chronological').pack()
+    Button(tkwindow, text= "Set wkit project's raw folder", command=onClick).pack(pady= 10, anchor=W)
+    # Infinite loop terminated in the onClick definition
+    tkwindow.mainloop()
+
+
+# tkinter button action to start the recursion and then stop the program when the parsing is done.
+# I have no idea why, but this program ends at this definition.
+def onClick():
+    RunMode(ScriptParameters['SearchMode'].get())
+    DumpBuffer()
+    open_file(ScriptParameters['ProjectDirectory'])
+    tkwindow.destroy()
+
+
+# Open file explorer at the dump file
+def open_file(path):
+    if platform.system() == "Windows":
+        os.startfile(path)
+    elif platform.system() == "Darwin":
+        subprocess.Popen(["open", path])
+    else:
+        subprocess.Popen(["xdg-open", path])
+
+
+# Convert file to JSON format
+# Input: file from ProjectDirectory[]
+# Output: JSON format or None
+def convertJSON(tup):                                                                                                                                    
+    try:                                                                           
+        tup_json = json.load(tup)                                                 
+        return tup_json                                                            
+    except ValueError as error:  # includes JSONDecodeError                           
+        return None 
+
+
 # Evaluate project files and initiate recursion
 # Input: ScriptParameters['SearchModes']
 # Output: None (except the dummy light I guess)
 def RunMode(mode):
     tkwindow.minsize()
-    
+
     # Folder dialog prompt
     ScriptParameters['ProjectDirectory'] = askdirectory(title='Select Folder', initialdir='.') # shows dialog box and return the path
     # Assign path to the output file
@@ -148,78 +210,13 @@ def DumpBuffer():
     FoundBuffer['Data'] = dict() # Reset buffer
 
 
-# Convert file to JSON format
-# Input: file from ProjectDirectory[]
-# Output: JSON format or None
-def convertJSON(tup):                                                                                                                                    
-    try:                                                                           
-        tup_json = json.load(tup)                                                 
-        return tup_json                                                            
-    except ValueError as error:  # includes JSONDecodeError                           
-        return None 
-
-
-# tkinter button action to start the recursion and then stop the program when the parsing is done.
-# I have no idea why, but this program ends at this definition.
-def onClick():
-    RunMode(ScriptParameters['SearchMode'].get())
-    DumpBuffer()
-    open_file(ScriptParameters['ProjectDirectory'])
-    tkwindow.destroy()
-
-
-def CreateTkWindow():
-    # Calculate resolution of screen for dynamic resizing
-    font = tkfont.Font(family="Consolas", size=10, weight="normal")
-    width = 0
-    height = 1
-    # Identify the quantity of characters to fill the largest width and height
-    for key, val in ScriptParameters['SearchModes'].items():
-        if len(key+val) > width:
-            width = len(key+val)
-        height += 1
-    # Uneducated calculations for the dynamic resizing
-    width = width * font.measure("m")
-    height = round(100/(height*2)) * font.measure("m") * len(ScriptParameters['SearchModes'])
-    # Hopes and prayers
-    tkwindow.geometry(f"{width}x{height}")
-
-
-    # Tkinter string variable that will anchor the radiobutton selections
-    ScriptParameters['SearchMode'] = StringVar(tkwindow, "Include")
-    # ScriptParameters['SortMode'] = StringVar(tkwindow, "Chronological")
-    header = StringVar()
-    # Create radiobuttons for all the search modes
-    label = Label( tkwindow, textvariable=header, font= ('Helvetica 15 underline')).pack(anchor=W)
-    header.set("Choose what keys to filter for:")
-    for (searchmode, description) in ScriptParameters['SearchModes'].items():
-        Radiobutton(tkwindow, text = description, variable = ScriptParameters['SearchMode'],
-            value = searchmode).pack(side = TOP, anchor=W, ipady = 5)
-    # Checkbutton(tkwindow, text='Sort output alphabetically', variable=ScriptParameters['SortMode'], onvalue='Alphabetic', offvalue='Chronological').pack()
-    Button(tkwindow, text= "Set wkit project's raw folder", command=onClick).pack(pady= 10, anchor=W)
-
-
-    # Infinite loop terminated in the onClick definition
-    tkwindow.mainloop()
-    
-
-# Open file explorer at the dump file
-def open_file(path):
-    if platform.system() == "Windows":
-        os.startfile(path)
-    elif platform.system() == "Darwin":
-        subprocess.Popen(["open", path])
-    else:
-        subprocess.Popen(["xdg-open", path])
-
-
-
 # Declare buffer queue of found keys during the recursive definition
 FoundBuffer = {
     'cntIndex': 0,
     'NumberOfFiles': 0,
     'Data': dict()
 }
+
 
 # Array of keywords to filter the recursion on
 # SearchMode == Include ::: Find keys that are in this list
