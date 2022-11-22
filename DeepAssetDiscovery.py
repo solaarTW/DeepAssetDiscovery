@@ -4,14 +4,16 @@ from tkinter.ttk import Label, Button
 from pathlib import Path
 from sys import exit
 from json import load, dump
-# Extra permissions required because WolvenKit Console does not serializing to DepotPath
-# See the below function named MoveSerializedFilesToDepotPath() 
-from os import startfile, makedirs
-from shutil import rmtree, move
 from platform import system
-from subprocess import Popen, run
 from functools import reduce
 from operator import getitem
+# Libraries with hightened security
+from subprocess import run # run wolvenkit.console to create JSON files
+from os import makedirs # create temp folder for JSON files
+from shutil import rmtree  # delete temp folder convert JSON files
+from shutil import move # move JSON files into DepotPath structure for ref validation (wkit.cli convert limitation)
+from subprocess import Popen # open macos/linux file browser when program ends
+from os import startfile # open windows file browser when program ends
 
 
 def CreateUI():
