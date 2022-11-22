@@ -457,7 +457,7 @@ def AddMissingFiles():
     for file in DataBuffer['MissingFiles']:
         if file.split('.')[-1] in Config['AddFiles']['ExtFilter'] or Config['AddFiles']['ExtFilter'] == ['*']:
             # Execute built up -w filter
-            if arg4 != '' and len(f'{prg} {arg1} {arg2} {arg3} {arg4}') > 8000:
+            if arg4 != '' and len(f'{prg} {arg1} {arg2} {arg3} {arg4}') > 32400:
                 # -r "" regex needs \\ escape characters
                 arg4 = arg4.replace("\\","\\\\")
                 arg4 = f'-r "{arg4}"'
