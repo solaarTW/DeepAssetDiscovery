@@ -1,6 +1,6 @@
-from tkinter import Tk, LabelFrame
+from tkinter import Tk, LabelFrame, StringVar
 from tkinter.filedialog import askdirectory, askopenfile
-from tkinter.ttk import Label, Button
+from tkinter.ttk import Label, Button, Radiobutton
 from pathlib import Path
 from sys import exit
 from json import load, dump
@@ -29,6 +29,11 @@ def CreateUI():
     InstructionsFrame = LabelFrame(tkwindow, text='Instructions', font= ('Helvetica 12 bold'))
     InstructionsFrame.grid(padx=10, pady=(5, 10), sticky='w')
     # Create widgets
+    ### Future development: option between JSON vs CSV reports
+    # Label(InstructionsFrame, text="Step 1) Select format of the reports.", font= ('Helvetica 10')).grid(ipady=5, sticky='w')
+    # Config['Project']['ReportFormat'] = StringVar(InstructionsFrame, Config['Project']['ReportFormat'])
+    # Radiobutton(InstructionsFrame, text='CSV', variable=Config['Project']['ReportFormat'], value='CSV').grid(padx=(42,0), sticky='w')
+    # Radiobutton(InstructionsFrame, text='JSON', variable=Config['Project']['ReportFormat'], value='JSON').grid(padx=(42,0), sticky='w')
     Label(InstructionsFrame, text="Step 1) Select your project's source folder.", font= ('Helvetica 10')).grid(ipady=5, sticky='w')
     Button(InstructionsFrame, text="Select project folder", command=onClickFindProject).grid(padx=(40,0), sticky='w')
     Config['Project']['SelectLabel'] = Label(InstructionsFrame, text=Config['Project']['SelectLabel'])
@@ -38,6 +43,10 @@ def CreateUI():
     Config['Console']['SelectLabel'] = Label(InstructionsFrame, text=Config['Console']['SelectLabel'])
     Config['Console']['SelectLabel'].grid(padx=(42,0), sticky='w')
     Label(InstructionsFrame, text="-Optional- Select the Cyberpunk game folder to add missing resources to your project.", font= ('Helvetica 10')).grid(ipady=5, sticky='w')
+    Config['AddFiles']['ExtFilter'] = StringVar(InstructionsFrame, Config['AddFiles']['ExtFilter'])
+    Radiobutton(InstructionsFrame, text=Config['AddFiles']['Text1'], variable=Config['AddFiles']['ExtFilter'], value="ent,app,mesh").grid(padx=(42,0), sticky='w')
+    Radiobutton(InstructionsFrame, text=Config['AddFiles']['Text2'], variable=Config['AddFiles']['ExtFilter'], value="ent,app,mesh,mlsetup,mlmask,mltemplate").grid(padx=(42,0), sticky='w')
+    Radiobutton(InstructionsFrame, text=Config['AddFiles']['Text3'], variable=Config['AddFiles']['ExtFilter'], value="*").grid(pady=(0,5), padx=(42,0), sticky='w')
     Button(InstructionsFrame, text="Select REDprelauncher.exe", command=onClickFindGame).grid(padx=(40,0), sticky='w')
     Config['Cyberpunk']['SelectLabel'] = Label(InstructionsFrame, text=Config['Cyberpunk']['SelectLabel'])
     Config['Cyberpunk']['SelectLabel'].grid(padx=(42,0), sticky='w')
@@ -114,6 +123,7 @@ def onClickFindGame():
 
 def onClickRunCheck():
     tkwindow.withdraw()
+    Config['AddFiles']['ExtFilter'] = (Config['AddFiles']['ExtFilter'].get()).split(',')
     RunDAD()
 
 
@@ -441,19 +451,20 @@ def AddMissingFiles():
     arg3 = f'-o "{arg3}"'
     arg4 = ''
     for file in DataBuffer['MissingFiles']:
-        # Execute built up -w filter
-        if arg4 != '' and len(f'{prg} {arg1} {arg2} {arg3} {arg4}') > 8150:
-            # -r "" regex needs \\ escape characters
-            arg4 = arg4.replace("\\","\\\\")
-            arg4 = f'-r "{arg4}"'
-            run(f'{prg} {arg1} {arg2} {arg3} {arg4}', shell=False)
-            arg4 = ''
-        # Normal loop to build up -w filter
-        else:
-            if arg4 == '':
-                arg4 = f"{file}"
+        if file.split('.')[-1] in Config['AddFiles']['ExtFilter'] or Config['AddFiles']['ExtFilter'] == ['*']:
+            # Execute built up -w filter
+            if arg4 != '' and len(f'{prg} {arg1} {arg2} {arg3} {arg4}') > 8150:
+                # -r "" regex needs \\ escape characters
+                arg4 = arg4.replace("\\","\\\\")
+                arg4 = f'-r "{arg4}"'
+                run(f'{prg} {arg1} {arg2} {arg3} {arg4}', shell=False)
+                arg4 = ''
+            # Normal loop to build up -w filter
             else:
-                arg4 += f"|{file}"
+                if arg4 == '':
+                    arg4 = f"{file}"
+                else:
+                    arg4 += f"|{file}"
     # Final convert if -w filter buffer isn't empty
     if arg4 != '':
         # -r "" regex needs \\ escape characters
@@ -477,11 +488,18 @@ Config = {
     'ArchiveDir': Path('None'),
     'JSONDir': Path('None'),
     'SelectLabel': 'Not selected',
+    'ReportFormat': 'JSON',
     'RunButton': 'disabled'
 },
 'Console': {
     'Dir': Path('None'),
     'SelectLabel': 'Not selected',
+},
+'AddFiles': {
+    'Text1': 'Only add: Entity, Appearance, and Mesh',
+    'Text2': 'Only add: Entity, Appearance, Mesh, and Multilayered',
+    'Text3': 'Add everything',
+    'ExtFilter': "ent,app,mesh",
 },
 'Cyberpunk': {
     'Dir': Path('None'),
