@@ -10,10 +10,10 @@ from operator import getitem
 # Libraries with hightened security
 from subprocess import run # run wolvenkit.console to create JSON files
 from os import makedirs # create temp folder for JSON files
-from shutil import rmtree  # delete temp folder convert JSON files
-from shutil import move # move JSON files into DepotPath structure for ref validation (wkit.cli convert limitation)
-from subprocess import Popen # open macos/linux file browser when program ends
 from os import startfile # open windows file browser when program ends
+from subprocess import Popen # open macos/linux file browser when program ends
+from shutil import rmtree  # delete temp folder needed for JSON parsing
+from shutil import move # move JSON files into DepotPath structure for reference validation
 
 
 def CreateUI():
@@ -453,7 +453,7 @@ def AddMissingFiles():
     for file in DataBuffer['MissingFiles']:
         if file.split('.')[-1] in Config['AddFiles']['ExtFilter'] or Config['AddFiles']['ExtFilter'] == ['*']:
             # Execute built up -w filter
-            if arg4 != '' and len(f'{prg} {arg1} {arg2} {arg3} {arg4}') > 8150:
+            if arg4 != '' and len(f'{prg} {arg1} {arg2} {arg3} {arg4}') > 8000:
                 # -r "" regex needs \\ escape characters
                 arg4 = arg4.replace("\\","\\\\")
                 arg4 = f'-r "{arg4}"'
