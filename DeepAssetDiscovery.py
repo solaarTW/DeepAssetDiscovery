@@ -8,6 +8,7 @@ from platform import system
 from functools import reduce
 from operator import getitem
 # Libraries with hightened security
+from subprocess import STARTUPINFO, STARTF_USESHOWWINDOW, SW_HIDE
 from subprocess import run # run wolvenkit.console to create JSON files
 from os import makedirs # create temp folder for JSON files
 from os import startfile # open windows file browser when program ends
@@ -186,7 +187,10 @@ def SerializeArchive():
     arg2 = f's "{arg2}"'
     arg3 = Config['Project']['JSONDir']
     arg3 = f'-o "{arg3}"'
-    run(f'{prg} {arg1} {arg2} {arg3}', shell=False)
+    run(f'{prg} {arg1} {arg2} {arg3}', startupinfo=startupinfo, shell=False)
+    #run(f'{prg} {arg1} {arg2} {arg3}', shell=False)
+    
+
 # DELETE THIS FUNCTION ONCE WKIT CONSOLE CONVERTS FILES INTO THEIR DEPOTPATH
 # CURRENTLY CONVERT PUTS ALL JSON FILES INTO A SINGLE LOCATION
 def MoveSerializedFilesToDepotPath():
@@ -457,7 +461,7 @@ def AddMissingFiles():
                 # -r "" regex needs \\ escape characters
                 arg4 = arg4.replace("\\","\\\\")
                 arg4 = f'-r "{arg4}"'
-                run(f'{prg} {arg1} {arg2} {arg3} {arg4}', shell=False)
+                run(f'{prg} {arg1} {arg2} {arg3} {arg4}', startupinfo=startupinfo, shell=False)
                 arg4 = ''
             # Normal loop to build up -w filter
             else:
@@ -470,7 +474,7 @@ def AddMissingFiles():
         # -r "" regex needs \\ escape characters
         arg4 = arg4.replace("\\","\\\\")
         arg4 = f'-r "{arg4}"'
-        run(f'{prg} {arg1} {arg2} {arg3} {arg4}', shell=False)
+        run(f'{prg} {arg1} {arg2} {arg3} {arg4}', startupinfo=startupinfo, shell=False)
 
 
 Config = {
@@ -528,6 +532,9 @@ DataBuffer = {
     'MissingFiles': []
     }
 
+startupinfo = STARTUPINFO()
+startupinfo.dwFlags |= STARTF_USESHOWWINDOW
+startupinfo.wShowWindow = SW_HIDE
 tkwindow = Tk()
 CreateUI()
 tkwindow.mainloop()
