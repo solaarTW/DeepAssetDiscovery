@@ -42,7 +42,7 @@ def CreateUI():
     Button(InstructionsFrame, text="Select WolvenKit.Console", command=onClickFindConsole).grid(padx=(40,0), sticky='w')
     Config['Console']['SelectLabel'] = Label(InstructionsFrame, text=Config['Console']['SelectLabel'])
     Config['Console']['SelectLabel'].grid(padx=(42,0), sticky='w')
-    Label(InstructionsFrame, text="-Optional- Select the Cyberpunk game folder to add missing resources to your project.", font= ('Helvetica 10')).grid(ipady=5, sticky='w')
+    Label(InstructionsFrame, text="-Optional- Select the Cyberpunk game launcher to add missing resources to your project.", font= ('Helvetica 10')).grid(ipady=5, sticky='w')
     Config['AddFiles']['ExtFilter'] = StringVar(InstructionsFrame, Config['AddFiles']['ExtFilter'])
     Radiobutton(InstructionsFrame, text=Config['AddFiles']['Text1'], variable=Config['AddFiles']['ExtFilter'], value="ent,app,mesh").grid(padx=(42,0), sticky='w')
     Radiobutton(InstructionsFrame, text=Config['AddFiles']['Text2'], variable=Config['AddFiles']['ExtFilter'], value="ent,app,mesh,mlsetup,mlmask,mltemplate").grid(padx=(42,0), sticky='w')
