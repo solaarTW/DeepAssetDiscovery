@@ -1,4 +1,4 @@
-from tkinter import Tk, LabelFrame, StringVar
+from tkinter import Tk, LabelFrame, StringVar, messagebox
 from tkinter.filedialog import askdirectory, askopenfile
 from tkinter.ttk import Label, Button, Radiobutton
 from pathlib import Path
@@ -123,8 +123,10 @@ def onClickFindGame():
 
 
 def onClickRunCheck():
-    tkwindow.withdraw()
+    Config['Project']['RunButton'].configure(text='Program Running -- please wait')
     Config['AddFiles']['ExtFilter'] = (Config['AddFiles']['ExtFilter'].get()).split(',')
+    messagebox.showinfo(title='Deep Asset Discovery', message='Click OK to start, this may take a few minutes depending on your settings :)')
+    tkwindow.grab_set()
     RunDAD()
 
 
@@ -164,6 +166,7 @@ def RunDAD():
     if Config['Project']['JSONDir'].is_dir():
         rmtree(Config['Project']['JSONDir'])
     OpenFileExplorer(Config['Project']['SourceDir'])
+    tkwindow.grab_release()
     exit('Done')
 
 
@@ -188,7 +191,6 @@ def SerializeArchive():
     arg3 = Config['Project']['JSONDir']
     arg3 = f'-o "{arg3}"'
     run(f'{prg} {arg1} {arg2} {arg3}', startupinfo=startupinfo, shell=False)
-    #run(f'{prg} {arg1} {arg2} {arg3}', shell=False)
     
 
 # DELETE THIS FUNCTION ONCE WKIT CONSOLE CONVERTS FILES INTO THEIR DEPOTPATH
